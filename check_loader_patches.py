@@ -79,7 +79,7 @@ if __name__ == '__main__':
         vol = np.squeeze(vol)
         mask = np.squeeze(mask)
         print(vol.shape)
-        plot3d(vol)
+        # plot3d(vol)
         # plot3d(mask)
 # batch1 = train_loader.dataset[random.randint(0, len(train_gen) - 1)]
 #

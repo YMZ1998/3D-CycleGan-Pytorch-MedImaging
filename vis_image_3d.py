@@ -29,9 +29,6 @@ class IndexTracker(object):
 
 
 def plot3d(image):
-    # Rotate the image if needed
-    image = np.rot90(image, k=-1)
-
     # Create a figure and axis
     fig, ax = plt.subplots(1, 1)
 
@@ -56,7 +53,6 @@ if __name__ == '__main__':
     image = sitk.ReadImage(r"./result/predict.nii.gz")
     image = sitk.GetArrayFromImage(image)  # Convert to NumPy array
     image = image.transpose(1, 2, 0)  # Transpose to (rows, cols, slices)
-    image = np.rot90(image, k=1)  # Rotate if needed
 
     print("Image shape:", image.shape)  # Print the shape of the image
 

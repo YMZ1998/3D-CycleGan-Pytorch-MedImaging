@@ -1,4 +1,7 @@
 import sys
+
+from tqdm import tqdm
+
 from utils.NiftiDataset import *
 import utils.NiftiDataset as NiftiDataset
 from torch.utils.data import DataLoader
@@ -19,15 +22,17 @@ if __name__ == '__main__':
     # -----  Transformation and Augmentation process for the data  -----
     min_pixel = int(opt.min_pixel * ((opt.patch_size[0] * opt.patch_size[1] * opt.patch_size[2]) / 100))
     trainTransforms = [
-                # NiftiDataset.Resample(opt.new_resolution, opt.resample),
-                # NiftiDataset.Augmentation(),
-                NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
-                RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
-                ]
+        # NiftiDataset.Resample(opt.new_resolution, opt.resample),
+        # NiftiDataset.Augmentation(),
+        NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
+        RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
+    ]
 
-    train_set = NifitDataSet(opt.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=True, train=True)
+    train_set = NifitDataSet(opt.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=True,
+                             train=True)
     print('lenght train list:', len(train_set))
-    train_loader = DataLoader(train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers, pin_memory=True)  # Here are then fed to the network with a defined batch size
+    train_loader = DataLoader(train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers,
+                              pin_memory=True)  # Here are then fed to the network with a defined batch size
 
     # -----------------------------------------------------
     model = create_model(opt)  # creation of the model
@@ -42,7 +47,7 @@ if __name__ == '__main__':
         iter_data_time = time.time()
         epoch_iter = 0
 
-        for i, data in enumerate(train_loader):
+        for i, data in tqdm(enumerate(train_loader), desc='Training', total=len(train_loader), file=sys.stdout):
             # print(data[0].shape)
             # print(data[1].shape)
             iter_start_time = time.time()
@@ -75,13 +80,3 @@ if __name__ == '__main__':
         print('End of epoch %d / %d \t Time Taken: %d sec' %
               (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
         model.update_learning_rate()
-
-
-
-
-
-
-
-
-
-
