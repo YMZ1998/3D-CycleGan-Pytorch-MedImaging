@@ -18,8 +18,8 @@ if __name__ == '__main__':
     min_pixel = int(opt.min_pixel * ((opt.patch_size[0] * opt.patch_size[1] * opt.patch_size[2]) / 100))
     trainTransforms = [
                 NiftiDataset.Resample(opt.new_resolution, opt.resample),
-                NiftiDataset.Augmentation(),
-                NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
+                # NiftiDataset.Augmentation(),
+                # NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
                 NiftiDataset.RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
                 ]
 

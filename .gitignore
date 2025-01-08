@@ -14,7 +14,7 @@ __pycache__/
 dist/
 # Distribution / packaging
 .Python
-.idea/
+#.idea/
 checkpoint/
 data/
 dataset/
