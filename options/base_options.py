@@ -10,9 +10,9 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self, parser):
-        parser.add_argument('--data_path', type=str, default='./Data_folder/train/', help='Train images path')
-        parser.add_argument('--val_path', type=str, default='./Data_folder/test/', help='Validation images path')
-        parser.add_argument('--batch_size', type=int, default=2, help='input batch size')
+        parser.add_argument('--data_path', type=str, default=r'.\data\brain\train', help='Train images path')
+        parser.add_argument('--val_path', type=str, default=r'.\data\brain\test', help='Validation images path')
+        parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
         parser.add_argument('--patch_size', default=[128, 128, 64], help='Size of the patches extracted from the image')
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels')
         parser.add_argument('--output_nc', type=int, default=1, help='# of output image channels')
@@ -27,7 +27,7 @@ class BaseOptions():
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if netD==n_layers')
         parser.add_argument('--netG', type=str, default='resnet_9blocks', help='selects model to use for netG. Look on Networks3D to see the all list')
 
-        parser.add_argument('--gpu_ids', default='2,3', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
+        parser.add_argument('--gpu_ids', default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--model', type=str, default='cycle_gan', help='chooses which model to use. cycle_gan')
 
@@ -99,7 +99,7 @@ class BaseOptions():
 
         # set gpu ids
         str_ids = list(opt.gpu_ids)
-        str_ids.remove(',')
+        # str_ids.remove(',')
         opt.gpu_ids = []
         for str_id in str_ids:
             id = int(str_id)

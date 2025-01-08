@@ -387,6 +387,18 @@ def imadjust(image,gamma=np.random.uniform(1, 2)):
 
 # --------------------------------------------------------------------------------------
 
+def make_dataset(dir):
+    A_paths = []
+    B_paths = []
+    paths = os.listdir(dir)
+    for path in paths:
+        A = os.path.join(dir, path, 'cbct.nii.gz')
+        B = os.path.join(dir, path, 'ct.nii.gz')
+        if os.path.exists(A) and os.path.exists(B):
+            A_paths.append(A)
+            B_paths.append(B)
+    return A_paths, B_paths
+
 
 class NifitDataSet(torch.utils.data.Dataset):
 
@@ -399,8 +411,11 @@ class NifitDataSet(torch.utils.data.Dataset):
 
         # Init membership variables
         self.data_path = data_path
-        self.images_list = lstFiles(os.path.join(data_path, 'images'))
-        self.labels_list = lstFiles(os.path.join(data_path, 'labels'))
+        # print(data_path)
+        self.images_list,self.labels_list= make_dataset(data_path)
+        # print('images_list:',self.images_list)
+        # self.images_list = lstFiles(os.path.join(data_path, 'images'))
+        # self.labels_list = lstFiles(os.path.join(data_path, 'labels'))
         self.images_size = len(self.images_list)
         self.labels_size = len(self.labels_list)
 
