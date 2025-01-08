@@ -15,7 +15,7 @@ dist/
 # Distribution / packaging
 .Python
 .idea/
-checkpoint/
+checkpoints/
 data/
 dataset/
 log/

@@ -154,6 +154,8 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
         batch = torch.from_numpy(batch[np.newaxis, :, :, :])
         batch = Variable(batch.cuda())
 
+        # print("batch size: {}".format(batch.size()))
+
         # pred = model(batch)
         model.set_input(batch)
         model.test()
@@ -208,8 +210,9 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
 
 
 if __name__ == '__main__':
-
+    os.makedirs('./result',exist_ok=True)
     opt = TestOptions().parse()
+    print("model",opt.model)
 
     model = create_model(opt)
     model.setup(opt)

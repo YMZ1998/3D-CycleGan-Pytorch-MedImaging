@@ -14,6 +14,7 @@ if __name__ == '__main__':
 
     # -----  Loading the init options -----
     opt = TrainOptions().parse()
+    print("model", opt.model)
 
     # -----  Transformation and Augmentation process for the data  -----
     min_pixel = int(opt.min_pixel * ((opt.patch_size[0] * opt.patch_size[1] * opt.patch_size[2]) / 100))

@@ -397,7 +397,7 @@ def make_dataset(dir):
         if os.path.exists(A) and os.path.exists(B):
             A_paths.append(A)
             B_paths.append(B)
-    return A_paths[:10], B_paths[:10]
+    return A_paths[:], B_paths[:]
 
 
 class NifitDataSet(torch.utils.data.Dataset):
