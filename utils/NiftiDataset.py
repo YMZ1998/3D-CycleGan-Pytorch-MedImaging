@@ -552,9 +552,10 @@ class NifitDataSet_testing(torch.utils.data.Dataset):
         """
 
     def read_image(self, path):
-        reader = sitk.ImageFileReader()
-        reader.SetFileName(path)
-        image = reader.Execute()
+        image=sitk.ReadImage(path)
+        # reader = sitk.ImageFileReader()
+        # reader.SetFileName(path)
+        # image = reader.Execute()
         return image
 
     def __getitem__(self, item):
