@@ -8,6 +8,7 @@ import time
 from models import create_model
 from utils.visualizer import Visualizer
 from test import inference
+from utils.random_crop import RandomCrop
 
 if __name__ == '__main__':
 
@@ -17,10 +18,10 @@ if __name__ == '__main__':
     # -----  Transformation and Augmentation process for the data  -----
     min_pixel = int(opt.min_pixel * ((opt.patch_size[0] * opt.patch_size[1] * opt.patch_size[2]) / 100))
     trainTransforms = [
-                NiftiDataset.Resample(opt.new_resolution, opt.resample),
+                # NiftiDataset.Resample(opt.new_resolution, opt.resample),
                 # NiftiDataset.Augmentation(),
-                # NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
-                NiftiDataset.RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
+                NiftiDataset.Padding((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2])),
+                RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
                 ]
 
     train_set = NifitDataSet(opt.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=True, train=True)
@@ -41,6 +42,8 @@ if __name__ == '__main__':
         epoch_iter = 0
 
         for i, data in enumerate(train_loader):
+            # print(data[0].shape)
+            # print(data[1].shape)
             iter_start_time = time.time()
             if total_steps % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time

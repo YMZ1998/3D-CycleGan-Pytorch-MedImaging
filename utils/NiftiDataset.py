@@ -397,7 +397,7 @@ def make_dataset(dir):
         if os.path.exists(A) and os.path.exists(B):
             A_paths.append(A)
             B_paths.append(B)
-    return A_paths, B_paths
+    return A_paths[:10], B_paths[:10]
 
 
 class NifitDataSet(torch.utils.data.Dataset):
@@ -1026,103 +1026,103 @@ class CropBackground(object):
         return {'image': image_crop, 'label': label_crop}
 
 
-class RandomCrop(object):
-    """
-    Crop randomly the image in a sample. This is usually used for data augmentation.
-      Drop ratio is implemented for randomly dropout crops with empty label. (Default to be 0.2)
-      This transformation only applicable in train mode
-
-    Args:
-      output_size (tuple or int): Desired output size. If int, cubic crop is made.
-    """
-
-    def __init__(self, output_size, drop_ratio=0.1, min_pixel=1):
-        self.name = 'Random Crop'
-
-        assert isinstance(output_size, (int, tuple))
-        if isinstance(output_size, int):
-            self.output_size = (output_size, output_size, output_size)
-        else:
-            assert len(output_size) == 3
-            self.output_size = output_size
-
-        assert isinstance(drop_ratio, (int, float))
-        if drop_ratio >= 0 and drop_ratio <= 1:
-            self.drop_ratio = drop_ratio
-        else:
-            raise RuntimeError('Drop ratio should be between 0 and 1')
-
-        assert isinstance(min_pixel, int)
-        if min_pixel >= 0:
-            self.min_pixel = min_pixel
-        else:
-            raise RuntimeError('Min label pixel count should be integer larger than 0')
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-        size_old = image.GetSize()
-        size_new = self.output_size
-
-        contain_label = False
-
-        roiFilter = sitk.RegionOfInterestImageFilter()
-        roiFilter.SetSize([size_new[0], size_new[1], size_new[2]])
-
-        # statFilter = sitk.StatisticsImageFilter()     # not useful
-        # statFilter.Execute(label)
-        # print(statFilter.GetMaximum(), statFilter.GetSum())
-
-        while not contain_label:
-            # get the start crop coordinate in ijk
-            if size_old[0] <= size_new[0]:
-                start_i = 0
-            else:
-                start_i = np.random.randint(0, size_old[0] - size_new[0])
-
-            if size_old[1] <= size_new[1]:
-                start_j = 0
-            else:
-                start_j = np.random.randint(0, size_old[1] - size_new[1])
-
-            if size_old[2] <= size_new[2]:
-                start_k = 0
-            else:
-                start_k = np.random.randint(0, size_old[2] - size_new[2])
-
-            roiFilter.SetIndex([start_i, start_j, start_k])
-
-            if Segmentation is False:
-                # threshold label into only ones and zero
-                threshold = sitk.BinaryThresholdImageFilter()
-                threshold.SetLowerThreshold(1)
-                threshold.SetUpperThreshold(255)
-                threshold.SetInsideValue(1)
-                threshold.SetOutsideValue(0)
-                mask = threshold.Execute(label)
-                mask_cropped = roiFilter.Execute(mask)
-                label_crop = roiFilter.Execute(label)
-                statFilter = sitk.StatisticsImageFilter()
-                statFilter.Execute(mask_cropped)  # mine for GANs
-
-            if Segmentation is True:
-                label_crop = roiFilter.Execute(label)
-                statFilter = sitk.StatisticsImageFilter()
-                statFilter.Execute(label_crop)
-
-            # will iterate until a sub volume containing label is extracted
-            # pixel_count = seg_crop.GetHeight()*seg_crop.GetWidth()*seg_crop.GetDepth()
-            # if statFilter.GetSum()/pixel_count<self.min_ratio:
-            if statFilter.GetSum() < self.min_pixel:
-                contain_label = self.drop(self.drop_ratio)  # has some probabilty to contain patch with empty label
-            else:
-                contain_label = True
-
-        image_crop = roiFilter.Execute(image)
-
-        return {'image': image_crop, 'label': label_crop}
-
-    def drop(self, probability):
-        return random.random() <= probability
+# class RandomCrop(object):
+#     """
+#     Crop randomly the image in a sample. This is usually used for data augmentation.
+#       Drop ratio is implemented for randomly dropout crops with empty label. (Default to be 0.2)
+#       This transformation only applicable in train mode
+#
+#     Args:
+#       output_size (tuple or int): Desired output size. If int, cubic crop is made.
+#     """
+#
+#     def __init__(self, output_size, drop_ratio=0.1, min_pixel=1):
+#         self.name = 'Random Crop'
+#
+#         assert isinstance(output_size, (int, tuple))
+#         if isinstance(output_size, int):
+#             self.output_size = (output_size, output_size, output_size)
+#         else:
+#             assert len(output_size) == 3
+#             self.output_size = output_size
+#
+#         assert isinstance(drop_ratio, (int, float))
+#         if drop_ratio >= 0 and drop_ratio <= 1:
+#             self.drop_ratio = drop_ratio
+#         else:
+#             raise RuntimeError('Drop ratio should be between 0 and 1')
+#
+#         assert isinstance(min_pixel, int)
+#         if min_pixel >= 0:
+#             self.min_pixel = min_pixel
+#         else:
+#             raise RuntimeError('Min label pixel count should be integer larger than 0')
+#
+#     def __call__(self, sample):
+#         image, label = sample['image'], sample['label']
+#         size_old = image.GetSize()
+#         size_new = self.output_size
+#
+#         contain_label = False
+#
+#         roiFilter = sitk.RegionOfInterestImageFilter()
+#         roiFilter.SetSize([size_new[0], size_new[1], size_new[2]])
+#
+#         # statFilter = sitk.StatisticsImageFilter()     # not useful
+#         # statFilter.Execute(label)
+#         # print(statFilter.GetMaximum(), statFilter.GetSum())
+#
+#         while not contain_label:
+#             # get the start crop coordinate in ijk
+#             if size_old[0] <= size_new[0]:
+#                 start_i = 0
+#             else:
+#                 start_i = np.random.randint(0, size_old[0] - size_new[0])
+#
+#             if size_old[1] <= size_new[1]:
+#                 start_j = 0
+#             else:
+#                 start_j = np.random.randint(0, size_old[1] - size_new[1])
+#
+#             if size_old[2] <= size_new[2]:
+#                 start_k = 0
+#             else:
+#                 start_k = np.random.randint(0, size_old[2] - size_new[2])
+#
+#             roiFilter.SetIndex([start_i, start_j, start_k])
+#
+#             if Segmentation is False:
+#                 # threshold label into only ones and zero
+#                 threshold = sitk.BinaryThresholdImageFilter()
+#                 threshold.SetLowerThreshold(1)
+#                 threshold.SetUpperThreshold(255)
+#                 threshold.SetInsideValue(1)
+#                 threshold.SetOutsideValue(0)
+#                 mask = threshold.Execute(label)
+#                 mask_cropped = roiFilter.Execute(mask)
+#                 label_crop = roiFilter.Execute(label)
+#                 statFilter = sitk.StatisticsImageFilter()
+#                 statFilter.Execute(mask_cropped)  # mine for GANs
+#
+#             if Segmentation is True:
+#                 label_crop = roiFilter.Execute(label)
+#                 statFilter = sitk.StatisticsImageFilter()
+#                 statFilter.Execute(label_crop)
+#
+#             # will iterate until a sub volume containing label is extracted
+#             # pixel_count = seg_crop.GetHeight()*seg_crop.GetWidth()*seg_crop.GetDepth()
+#             # if statFilter.GetSum()/pixel_count<self.min_ratio:
+#             if statFilter.GetSum() < self.min_pixel:
+#                 contain_label = self.drop(self.drop_ratio)  # has some probabilty to contain patch with empty label
+#             else:
+#                 contain_label = True
+#
+#         image_crop = roiFilter.Execute(image)
+#
+#         return {'image': image_crop, 'label': label_crop}
+#
+#     def drop(self, probability):
+#         return random.random() <= probability
 
 
 class Augmentation(object):

@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from utils.NiftiDataset import *
 from torch.utils.data import DataLoader
 import utils.NiftiDataset as NiftiDataset
+from utils.random_crop import RandomCrop
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -16,14 +17,16 @@ parser.add_argument("--min_pixel", type=int, nargs=1, default=0.1, help="Percent
 args = parser.parse_args()
 
 min_pixel = int(args.min_pixel*((args.patch_size[0]*args.patch_size[1]*args.patch_size[2])/100))
+print('min_pixel:', min_pixel)
 
 trainTransforms = [
-    NiftiDataset.Resample(args.new_resolution, args.resample),
+    # NiftiDataset.Resample(args.new_resolution, args.resample),
     # NiftiDataset.Registration(),
     # NiftiDataset.Align(),
     # NiftiDataset.Augmentation(),
     # NiftiDataset.Padding((300, 300, 300)),
-    NiftiDataset.RandomCrop((args.patch_size[0], args.patch_size[1], args.patch_size[2]),
+    NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
+    RandomCrop((args.patch_size[0], args.patch_size[1], args.patch_size[2]),
                             args.drop_ratio, min_pixel)
 ]
 
@@ -66,15 +69,26 @@ def plot3d(image):
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     plt.show()
 
-
-batch1 = train_loader.dataset[random.randint(0, len(train_gen) - 1)]
-
-vol = batch1[0].numpy()
-mask = batch1[1].numpy()
-print(vol.shape)
-
-vol = np.squeeze(vol, axis=0)
-mask = np.squeeze(mask, axis=0)
-
-plot3d(vol)
-plot3d(mask)
+if __name__ == '__main__':
+    for i, batch in enumerate(train_loader):
+        print(batch[0].shape)
+        print(batch[1].shape)
+        vol = batch[0].numpy()
+        mask = batch[1].numpy()
+        print(vol.shape)
+        vol = np.squeeze(vol)
+        mask = np.squeeze(mask)
+        print(vol.shape)
+        plot3d(vol)
+        # plot3d(mask)
+# batch1 = train_loader.dataset[random.randint(0, len(train_gen) - 1)]
+#
+# vol = batch1[0].numpy()
+# mask = batch1[1].numpy()
+# print(vol.shape)
+#
+# vol = np.squeeze(vol, axis=0)
+# mask = np.squeeze(mask, axis=0)
+#
+# plot3d(vol)
+# plot3d(mask)
