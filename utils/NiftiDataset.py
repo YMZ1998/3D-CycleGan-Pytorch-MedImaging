@@ -106,8 +106,29 @@ def resize(img, new_size, interpolator):
     return sitk.Resample(img, reference_image, centered_transform, interpolator, 0.0)
 
 
-def resample_sitk_image(sitk_image, spacing=None, interpolator=None, fill_value=0):
-    # https://github.com/SimpleITK/SlicerSimpleFilters/blob/master/SimpleFilters/SimpleFilters.py
+def resample_sitk_image(
+    sitk_image,
+    spacing,
+    interpolator,
+    fill_value
+) -> sitk.Image:
+    """
+    Resamples a SimpleITK image to a new grid with specified spacing and interpolation.
+
+    Args:
+        sitk_image (Union[str, sitk.Image]): Input SimpleITK image or path to an image file.
+        spacing (Optional[Tuple[float, ...]]): Desired output spacing (e.g., (1.0, 1.0, 1.0)).
+                                              If None, the smallest current spacing is used.
+        interpolator (Optional[str]): Interpolation method. Options: 'nearest', 'linear', 'gaussian',
+                                      'label_gaussian', 'bspline', 'hamming_sinc', 'cosine_windowed_sinc',
+                                      'welch_windowed_sinc', 'lanczos_windowed_sinc'.
+                                      If None, it is inferred from the pixel type.
+        fill_value (int): Value used for padding if needed. Default is 0.
+
+    Returns:
+        sitk.Image: Resampled SimpleITK image.
+    """
+    # Dictionary mapping interpolator names to SimpleITK interpolator types
     _SITK_INTERPOLATOR_DICT = {
         'nearest': sitk.sitkNearestNeighbor,
         'linear': sitk.sitkLinear,
@@ -120,75 +141,54 @@ def resample_sitk_image(sitk_image, spacing=None, interpolator=None, fill_value=
         'lanczos_windowed_sinc': sitk.sitkLanczosWindowedSinc
     }
 
-    """Resamples an ITK image to a new grid. If no spacing is given,
-    the resampling is done isotropically to the smallest value in the current
-    spacing. This is usually the in-plane resolution. If not given, the
-    interpolation is derived from the input data type. Binary input
-    (e.g., masks) are resampled with nearest neighbors, otherwise linear
-    interpolation is chosen.
-    Parameters
-    ----------
-    sitk_image : SimpleITK image or str
-      Either a SimpleITK image or a path to a SimpleITK readable file.
-    spacing : tuple
-      Tuple of integers
-    interpolator : str
-      Either `nearest`, `linear` or None.
-    fill_value : int
-    Returns
-    -------
-    SimpleITK image.
-    """
-
+    # Load the image if a file path is provided
     if isinstance(sitk_image, str):
         sitk_image = sitk.ReadImage(sitk_image)
+
+    # Get image properties
     num_dim = sitk_image.GetDimension()
-
-    if not interpolator:
-        interpolator = 'linear'
-        pixelid = sitk_image.GetPixelIDValue()
-
-        if pixelid not in [1, 2, 4]:
-            raise NotImplementedError(
-                'Set `interpolator` manually, '
-                'can only infer for 8-bit unsigned or 16, 32-bit signed integers')
-        if pixelid == 1:  # 8-bit unsigned int
-            interpolator = 'nearest'
-
-    orig_pixelid = sitk_image.GetPixelIDValue()
-    orig_origin = sitk_image.GetOrigin()
-    orig_direction = sitk_image.GetDirection()
     orig_spacing = np.array(sitk_image.GetSpacing())
-    orig_size = np.array(sitk_image.GetSize(), dtype=np.int)
+    orig_size = np.array(sitk_image.GetSize(), dtype=np.int16)
 
-    if not spacing:
-        min_spacing = orig_spacing.min()
-        new_spacing = [min_spacing] * num_dim
+    # Determine new spacing
+    if spacing is None:
+        new_spacing = [orig_spacing.min()] * num_dim  # Use smallest spacing if not provided
     else:
         new_spacing = [float(s) for s in spacing]
 
-    assert interpolator in _SITK_INTERPOLATOR_DICT.keys(), \
-        '`interpolator` should be one of {}'.format(_SITK_INTERPOLATOR_DICT.keys())
+    # Determine interpolator if not provided
+    if interpolator is None:
+        pixel_id = sitk_image.GetPixelIDValue()
+        if pixel_id in [1]:  # 8-bit unsigned int (e.g., binary masks)
+            interpolator = 'nearest'
+        else:
+            interpolator = 'linear'  # Default to linear interpolation
 
-    sitk_interpolator = _SITK_INTERPOLATOR_DICT[interpolator]
+    # Validate interpolator
+    if interpolator not in _SITK_INTERPOLATOR_DICT:
+        raise ValueError(
+            f"Invalid interpolator: {interpolator}. "
+            f"Supported options: {list(_SITK_INTERPOLATOR_DICT.keys())}"
+        )
 
+    # Calculate new size
     new_size = orig_size * (orig_spacing / new_spacing)
-    new_size = np.ceil(new_size).astype(np.int)  # Image dimensions are in integers
-    new_size = [int(s) for s in new_size]  # SimpleITK expects lists, not ndarrays
+    new_size = np.ceil(new_size).astype(np.int16).tolist()  # Convert to list of integers
 
+    # Set up the resampling filter
     resample_filter = sitk.ResampleImageFilter()
+    resample_filter.SetSize(new_size)
+    resample_filter.SetOutputSpacing(new_spacing)
+    resample_filter.SetOutputOrigin(sitk_image.GetOrigin())
+    resample_filter.SetOutputDirection(sitk_image.GetDirection())
+    resample_filter.SetTransform(sitk.Transform())
+    resample_filter.SetInterpolator(_SITK_INTERPOLATOR_DICT[interpolator])
+    resample_filter.SetDefaultPixelValue(fill_value)
 
-    resampled_sitk_image = resample_filter.Execute(sitk_image,
-                                                   new_size,
-                                                   sitk.Transform(),
-                                                   sitk_interpolator,
-                                                   orig_origin,
-                                                   new_spacing,
-                                                   orig_direction,
-                                                   fill_value,
-                                                   orig_pixelid)
+    # Perform resampling
+    resampled_image = resample_filter.Execute(sitk_image)
 
-    return resampled_sitk_image
+    return resampled_image
 
 
 def matrix_from_axis_angle(a):

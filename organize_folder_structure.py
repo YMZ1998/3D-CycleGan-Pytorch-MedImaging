@@ -1,4 +1,3 @@
-
 import os
 import shutil
 from time import time
@@ -17,11 +16,12 @@ def numericalSort(value):
     return parts
 
 
-def lstFiles(Path):
-
+def lstFiles(Path, mode='cbct'):
     images_list = []  # create an empty list, the raw image data files is stored here
     for dirName, subdirList, fileList in os.walk(Path):
         for filename in fileList:
+            if mode not in filename:
+                continue
             if ".nii.gz" in filename.lower():
                 images_list.append(os.path.join(dirName, filename))
             elif ".nii" in filename.lower():
@@ -34,7 +34,6 @@ def lstFiles(Path):
 
 
 def Align(image, reference):
-
     image_array = sitk.GetArrayFromImage(image)
 
     label_origin = reference.GetOrigin()
@@ -97,8 +96,7 @@ def CropBackground(image, label):
 
 
 def Registration(image, label):
-
-    image, image_sobel, label, label_sobel,  = image, image, label, label
+    image, image_sobel, label, label_sobel, = image, image, label, label
 
     Gaus = sitk.GradientMagnitudeRecursiveGaussianImageFilter()
     image_sobel = Gaus.Execute(image_sobel)
@@ -135,24 +133,25 @@ def Registration(image, label):
                                                   sitk.Cast(moving_image, sitk.sitkFloat32))
 
     image = sitk.Resample(image, fixed_image, final_transform, sitk.sitkLinear, 0.0,
-                                     moving_image.GetPixelID())
+                          moving_image.GetPixelID())
 
     return image, label
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--images', default='./Data_folder/T1', help='path to the images a (early frames)')
-parser.add_argument('--labels', default='./Data_folder/T2', help='path to the images b (late frames)')
+parser.add_argument('--images', default=r'./data/brain/train', help='path to the images a (early frames)')
+parser.add_argument('--labels', default=r'./data/brain/train', help='path to the images b (late frames)')
 parser.add_argument('--split', default=50, help='number of images for testing')
-parser.add_argument('--resolution', default=(1.6,1.6,1.6), help='new resolution to resample the all data')
+parser.add_argument('--resolution', default=(1.6, 1.6, 1.6), help='new resolution to resample the all data')
 args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    list_images = lstFiles(args.images)
-    list_labels = lstFiles(args.labels)
+    list_images = lstFiles(args.images, 'cbct')
+    list_labels = lstFiles(args.labels, 'ct')
+    print(list_images)
 
-    reference_image = list_labels[0]    # setting a reference image to have all data in the same coordinate system
+    reference_image = list_labels[0]  # setting a reference image to have all data in the same coordinate system
     reference_image = sitk.ReadImage(reference_image)
     reference_image = resample_sitk_image(reference_image, spacing=args.resolution, interpolator='linear')
 
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     if not os.path.isdir('./Data_folder/test'):
         os.mkdir('./Data_folder/test')
 
-    for i in range(len(list_images)-int(args.split)):
+    for i in range(len(list_images) - int(args.split)):
 
         save_directory_images = './Data_folder/train/images'
         save_directory_labels = './Data_folder/train/labels'
@@ -173,8 +172,8 @@ if __name__ == "__main__":
         if not os.path.isdir(save_directory_labels):
             os.mkdir(save_directory_labels)
 
-        a = list_images[int(args.split)+i]
-        b = list_labels[int(args.split)+i]
+        a = list_images[int(args.split) + i]
+        b = list_labels[int(args.split) + i]
 
         print(a)
 
@@ -190,8 +189,8 @@ if __name__ == "__main__":
         # image = Align(image, reference_image)
         # label = Align(label, reference_image)
 
-        label_directory = os.path.join(str(save_directory_labels), str(i) + '.nii')
-        image_directory = os.path.join(str(save_directory_images), str(i) + '.nii')
+        label_directory = os.path.join(str(save_directory_labels), str(i) + '.nii.gz')
+        image_directory = os.path.join(str(save_directory_images), str(i) + '.nii.gz')
 
         sitk.WriteImage(image, image_directory)
         sitk.WriteImage(label, label_directory)
@@ -224,9 +223,8 @@ if __name__ == "__main__":
         # image = Align(image, reference_image)
         # label = Align(label, reference_image)
 
-        label_directory = os.path.join(str(save_directory_labels), str(i) + '.nii')
-        image_directory = os.path.join(str(save_directory_images), str(i) + '.nii')
+        label_directory = os.path.join(str(save_directory_labels), str(i) + '.nii.gz')
+        image_directory = os.path.join(str(save_directory_images), str(i) + '.nii.gz')
 
         sitk.WriteImage(image, image_directory)
         sitk.WriteImage(label, label_directory)
-
