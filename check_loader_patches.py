@@ -11,7 +11,7 @@ parser.add_argument("--resample", action='store_true', default=False, help='Deci
 parser.add_argument("--new_resolution", type=float, default=(0.5, 0.5, 0.5), help='New resolution')
 parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
-parser.add_argument("--drop_ratio", type=float, nargs=1, default=0, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
+parser.add_argument("--drop_ratio", type=float, nargs=1, default=0.1, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
 parser.add_argument("--min_pixel", type=int, nargs=1, default=0.1, help="Percentage of minimum non-zero pixels in the cropped label")
 
 args = parser.parse_args()
@@ -25,12 +25,12 @@ trainTransforms = [
     # NiftiDataset.Align(),
     # NiftiDataset.Augmentation(),
     # NiftiDataset.Padding((300, 300, 300)),
-    NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
+    # NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
     RandomCrop((args.patch_size[0], args.patch_size[1], args.patch_size[2]),
                             args.drop_ratio, min_pixel)
 ]
 
-train_gen = NifitDataSet(args.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=True, train=True)
+train_gen = NifitDataSet(args.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=False, train=True)
 print('lenght train list:',len(train_gen))
 train_loader = DataLoader(train_gen, batch_size=args.batch_size, shuffle=True)
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         print(batch[1].shape)
         vol = batch[0].numpy()
         mask = batch[1].numpy()
-        print(vol.shape)
+        # print(vol.shape)
         vol = np.squeeze(vol)
         mask = np.squeeze(mask)
         print(vol.shape)

@@ -429,9 +429,10 @@ class NifitDataSet(torch.utils.data.Dataset):
         self.bit = sitk.sitkFloat32
 
     def read_image(self, path):
-        reader = sitk.ImageFileReader()
-        reader.SetFileName(path)
-        image = reader.Execute()
+        image = sitk.ReadImage(path)
+        # reader = sitk.ImageFileReader()
+        # reader.SetFileName(path)
+        # image = reader.Execute()
         return image
 
     def __getitem__(self, index):

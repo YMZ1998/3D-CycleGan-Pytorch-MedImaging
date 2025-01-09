@@ -21,6 +21,7 @@ if __name__ == '__main__':
 
     # -----  Transformation and Augmentation process for the data  -----
     min_pixel = int(opt.min_pixel * ((opt.patch_size[0] * opt.patch_size[1] * opt.patch_size[2]) / 100))
+    print("min_pixel", min_pixel)
     trainTransforms = [
         # NiftiDataset.Resample(opt.new_resolution, opt.resample),
         # NiftiDataset.Augmentation(),
@@ -28,7 +29,7 @@ if __name__ == '__main__':
         RandomCrop((opt.patch_size[0], opt.patch_size[1], opt.patch_size[2]), opt.drop_ratio, min_pixel),
     ]
 
-    train_set = NifitDataSet(opt.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=True,
+    train_set = NifitDataSet(opt.data_path, which_direction='AtoB', transforms=trainTransforms, shuffle_labels=False,
                              train=True)
     print('lenght train list:', len(train_set))
     train_loader = DataLoader(train_set, batch_size=opt.batch_size, shuffle=True, num_workers=opt.workers,

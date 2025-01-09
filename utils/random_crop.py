@@ -37,6 +37,7 @@ class RandomCrop:
             raise ValueError("min_pixel must be a non-negative integer.")
         self.min_pixel = min_pixel
 
+
     def __call__(self, sample):
         """
         Apply random cropping to the sample.
@@ -55,40 +56,50 @@ class RandomCrop:
         if any(new > old for new, old in zip(size_new, size_old)):
             raise ValueError(f"Crop size {size_new} must not be larger than the image size {size_old}.")
 
-        # Initialize the ROI filter
-        roi_filter = sitk.RegionOfInterestImageFilter()
-        roi_filter.SetSize(size_new)
+        # Convert SimpleITK images to NumPy arrays
+        image_np = sitk.GetArrayFromImage(image)
+        label_np = sitk.GetArrayFromImage(label)
 
         # Keep trying until a valid crop is found
         while True:
             # Generate random start indices for the crop
             start_indices = [
-                np.random.randint(0, (old - new)//2) if old > new else 0
+                np.random.randint(0, (old - new)) if old > new else 0
                 for old, new in zip(size_old, size_new)
             ]
-            # print(start_indices)
+            for i in range(3):
+                if not start_indices[i] + size_new[i] < size_old[i]:
+                    start_indices[i] = size_old[i] - size_new[i]
 
-            # Check if the ROI is within the image bounds
-            if all(0 <= start <= (old - new) for start, old, new in zip(start_indices, size_old, size_new)):
-                roi_filter.SetIndex(start_indices)
-            else:
-                raise RuntimeError("Generated ROI is outside the image bounds.")
+            # Calculate the end indices
+            end_indices = [start + new for start, new in zip(start_indices, size_new)]
 
-            # Crop the label
-            label_crop = roi_filter.Execute(label)
+            image_crop_np = image_np[
+                            start_indices[2]:end_indices[2],  # z (depth)
+                            start_indices[1]:end_indices[1],  # y (height)
+                            start_indices[0]:end_indices[0]  # x (width)
+                            ]
+            label_crop_np = label_np[
+                            start_indices[2]:end_indices[2],  # z (depth)
+                            start_indices[1]:end_indices[1],  # y (height)
+                            start_indices[0]:end_indices[0]  # x (width)
+                            ]
 
             # Check if the label crop meets the minimum pixel requirement
-            stat_filter = sitk.StatisticsImageFilter()
-            stat_filter.Execute(label_crop)
-            if stat_filter.GetSum() >= self.min_pixel:
+            if label_crop_np.sum() >= self.min_pixel:
                 # Valid crop found
                 break
             elif self._should_drop_empty_crop():
                 # Allow empty crop with probability drop_ratio
                 break
 
-        # Crop the image
-        image_crop = roi_filter.Execute(image)
+        # Convert the cropped NumPy arrays back to SimpleITK images
+        image_crop = sitk.GetImageFromArray(image_crop_np)
+        label_crop = sitk.GetImageFromArray(label_crop_np)
+
+        # Copy metadata from the original images
+        # image_crop.CopyInformation(image)
+        # label_crop.CopyInformation(label)
 
         return {'image': image_crop, 'label': label_crop}
 
@@ -104,7 +115,7 @@ class RandomCrop:
 
 if __name__ == '__main__':
     # 创建 RandomCrop 实例
-    random_crop = RandomCrop(output_size=(128, 128, 64), drop_ratio=0.1, min_pixel=10)
+    random_crop = RandomCrop(output_size=(128, 128, 64), drop_ratio=0.1, min_pixel=1048)
 
     path = "../data/brain/train/"
     for p in os.listdir(path):
@@ -118,6 +129,7 @@ if __name__ == '__main__':
         try:
             cropped_sample = random_crop(sample)
             print(f"Cropped image size: {cropped_sample['image'].GetSize()}")
+            print(f"Cropped label size: {cropped_sample['label'].GetSize()}")
             # sitk.WriteImage(cropped_sample['image'], "cropped_image.nii.gz")
             # sitk.WriteImage(cropped_sample['label'], "cropped_label.nii.gz")
         except RuntimeError as e:
