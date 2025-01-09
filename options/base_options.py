@@ -13,7 +13,7 @@ class BaseOptions():
         parser.add_argument('--data_path', type=str, default=r'./data/brain/train', help='Train images path')
         parser.add_argument('--val_path', type=str, default=r'./data/brain/test', help='Validation images path')
         parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
-        parser.add_argument('--patch_size', default=[128, 128, 64], help='Size of the patches extracted from the image')
+        parser.add_argument('--patch_size', default=[192, 192, 32], help='Size of the patches extracted from the image')
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels')
         parser.add_argument('--output_nc', type=int, default=1, help='# of output image channels')
         parser.add_argument('--resample', default=False, help='Decide or not to rescale the images to a new resolution')

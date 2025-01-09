@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--data_path", type=str, default=r'./data/brain/train')
 parser.add_argument("--resample", action='store_true', default=False, help='Decide or not to resample the images to a new resolution')
 parser.add_argument("--new_resolution", type=float, default=(0.5, 0.5, 0.5), help='New resolution')
-parser.add_argument("--patch_size", type=int, nargs=3, default=[128, 128, 64], help="Input dimension for the generator")
+parser.add_argument("--patch_size", type=int, nargs=3, default=[192, 192, 32], help="Input dimension for the generator")
 parser.add_argument("--batch_size", type=int, nargs=1, default=1, help="Batch size to feed the network (currently supports 1)")
 parser.add_argument("--drop_ratio", type=float, nargs=1, default=0.1, help="Probability to drop a cropped area if the label is empty. All empty patches will be dropped for 0 and accept all cropped patches if set to 1")
 parser.add_argument("--min_pixel", type=int, nargs=1, default=0.1, help="Percentage of minimum non-zero pixels in the cropped label")
@@ -25,7 +25,7 @@ trainTransforms = [
     # NiftiDataset.Align(),
     # NiftiDataset.Augmentation(),
     # NiftiDataset.Padding((300, 300, 300)),
-    # NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
+    NiftiDataset.Padding((args.patch_size[0], args.patch_size[1], args.patch_size[2])),
     RandomCrop((args.patch_size[0], args.patch_size[1], args.patch_size[2]),
                             args.drop_ratio, min_pixel)
 ]
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         vol = np.squeeze(vol)
         mask = np.squeeze(mask)
         print(vol.shape)
-        # plot3d(vol)
+        plot3d(vol)
         # plot3d(mask)
 # batch1 = train_loader.dataset[random.randint(0, len(train_gen) - 1)]
 #

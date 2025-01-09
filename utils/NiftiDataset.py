@@ -9,16 +9,16 @@ import scipy
 import torch
 import torch.utils.data
 
-
 # ------- Swithes -------
 
-interpolator_image = sitk.sitkLinear                 # interpolator image
-interpolator_label = sitk.sitkLinear                  # interpolator label
+interpolator_image = sitk.sitkLinear  # interpolator image
+interpolator_label = sitk.sitkLinear  # interpolator label
 
-_interpolator_image = 'linear'          # interpolator image
-_interpolator_label = 'linear'          # interpolator label
+_interpolator_image = 'linear'  # interpolator image
+_interpolator_label = 'linear'  # interpolator label
 
 Segmentation = False
+
 
 # ------------------------------------- Functions ---------------------------------------
 
@@ -30,7 +30,6 @@ def numericalSort(value):
 
 
 def lstFiles(Path):
-
     images_list = []  # create an empty list, the raw image data files is stored here
     for dirName, subdirList, fileList in os.walk(Path):
         for filename in fileList:
@@ -46,7 +45,6 @@ def lstFiles(Path):
 
 
 def create_list(data_path):
-
     data_list = glob.glob(os.path.join(data_path, '*'))
 
     label_name = 'label.nii'
@@ -106,12 +104,7 @@ def resize(img, new_size, interpolator):
     return sitk.Resample(img, reference_image, centered_transform, interpolator, 0.0)
 
 
-def resample_sitk_image(
-    sitk_image,
-    spacing,
-    interpolator,
-    fill_value
-) -> sitk.Image:
+def resample_sitk_image(sitk_image, spacing, interpolator, fill_value=0) -> sitk.Image:
     """
     Resamples a SimpleITK image to a new grid with specified spacing and interpolation.
 
@@ -254,25 +247,25 @@ def rotation3d_image(image, theta_x, theta_y, theta_z):
 
 
 def rotation3d_label(image, theta_x, theta_y, theta_z):
-   """
-   This function rotates an image across each of the x, y, z axes by theta_x, theta_y, and theta_z degrees
-   respectively
-   :param image: An sitk MRI image
-   :param theta_x: The amount of degrees the user wants the image rotated around the x axis
-   :param theta_y: The amount of degrees the user wants the image rotated around the y axis
-   :param theta_z: The amount of degrees the user wants the image rotated around the z axis
-   :param show: Boolean, whether or not the user wants to see the result of the rotation
-   :return: The rotated image
-   """
-   theta_x = np.deg2rad(theta_x)
-   theta_y = np.deg2rad(theta_y)
-   theta_z = np.deg2rad(theta_z)
-   euler_transform = sitk.Euler3DTransform(get_center(image), theta_x, theta_y, theta_z, (0, 0, 0))
-   image_center = get_center(image)
-   euler_transform.SetCenter(image_center)
-   euler_transform.SetRotation(theta_x, theta_y, theta_z)
-   resampled_image = resample_label(image, euler_transform)
-   return resampled_image
+    """
+    This function rotates an image across each of the x, y, z axes by theta_x, theta_y, and theta_z degrees
+    respectively
+    :param image: An sitk MRI image
+    :param theta_x: The amount of degrees the user wants the image rotated around the x axis
+    :param theta_y: The amount of degrees the user wants the image rotated around the y axis
+    :param theta_z: The amount of degrees the user wants the image rotated around the z axis
+    :param show: Boolean, whether or not the user wants to see the result of the rotation
+    :return: The rotated image
+    """
+    theta_x = np.deg2rad(theta_x)
+    theta_y = np.deg2rad(theta_y)
+    theta_z = np.deg2rad(theta_z)
+    euler_transform = sitk.Euler3DTransform(get_center(image), theta_x, theta_y, theta_z, (0, 0, 0))
+    image_center = get_center(image)
+    euler_transform.SetCenter(image_center)
+    euler_transform.SetRotation(theta_x, theta_y, theta_z)
+    resampled_image = resample_label(image, euler_transform)
+    return resampled_image
 
 
 def flipit(image, axes):
@@ -369,8 +362,7 @@ def translateit(image, offset, isseg=False):
     return img
 
 
-def imadjust(image,gamma=np.random.uniform(1, 2)):
-
+def imadjust(image, gamma=np.random.uniform(1, 2)):
     array = np.transpose(sitk.GetArrayFromImage(image), axes=(2, 1, 0))
     spacing = image.GetSpacing()
     direction = image.GetDirection()
@@ -384,6 +376,7 @@ def imadjust(image,gamma=np.random.uniform(1, 2)):
     img.SetSpacing(spacing)
 
     return img
+
 
 # --------------------------------------------------------------------------------------
 
@@ -412,7 +405,7 @@ class NifitDataSet(torch.utils.data.Dataset):
         # Init membership variables
         self.data_path = data_path
         # print(data_path)
-        self.images_list,self.labels_list= make_dataset(data_path)
+        self.images_list, self.labels_list = make_dataset(data_path)
         # print('images_list:',self.images_list)
         # self.images_list = lstFiles(os.path.join(data_path, 'images'))
         # self.labels_list = lstFiles(os.path.join(data_path, 'labels'))
@@ -521,11 +514,11 @@ class NifitDataSet(torch.utils.data.Dataset):
 
 class NifitDataSet_testing(torch.utils.data.Dataset):
 
-    def __init__(self, data_list,label_list,
+    def __init__(self, data_list, label_list,
                  which_direction='AtoB',
                  transforms=None,
                  train=False,
-                 test=False,):
+                 test=False, ):
 
         # Init membership variables
         self.data_list = data_list
@@ -553,7 +546,7 @@ class NifitDataSet_testing(torch.utils.data.Dataset):
         """
 
     def read_image(self, path):
-        image=sitk.ReadImage(path)
+        image = sitk.ReadImage(path)
         # reader = sitk.ImageFileReader()
         # reader.SetFileName(path)
         # image = reader.Execute()
@@ -641,9 +634,8 @@ def trim_bladder(image):
 
     ct_array = sitk.GetArrayFromImage(image)
 
-    super_threshold_indices = ct_array[100:280,:,:] > 15
-    ct_array[100:280,:,:][super_threshold_indices] = 1.82
-
+    super_threshold_indices = ct_array[100:280, :, :] > 15
+    ct_array[100:280, :, :][super_threshold_indices] = 1.82
 
     new_ct = sitk.GetImageFromArray(ct_array)
     new_ct.SetDirection(image.GetDirection())
@@ -731,7 +723,6 @@ class LaplacianRecursive(object):
         assert isinstance(sigma, (int, float))
         self.sigma = sigma
 
-
     def __call__(self, sample):
         image, label = sample['image'], sample['label']
         filter = sitk.LaplacianRecursiveGaussianImageFilter()
@@ -787,7 +778,7 @@ class Registration(object):
         self.name = 'SurfaceBasedRegistration'
 
     def __call__(self, sample):
-        image, image_sobel, label, label_sobel,  = sample['image'], sample['image'], sample['label'], sample['label']
+        image, image_sobel, label, label_sobel, = sample['image'], sample['image'], sample['label'], sample['label']
 
         Gaus = sitk.GradientMagnitudeRecursiveGaussianImageFilter()
         image_sobel = Gaus.Execute(image_sobel)
@@ -824,7 +815,7 @@ class Registration(object):
                                                       sitk.Cast(moving_image, sitk.sitkFloat32))
 
         image = sitk.Resample(image, fixed_image, final_transform, sitk.sitkLinear, 0.0,
-                                         moving_image.GetPixelID())
+                              moving_image.GetPixelID())
 
         return {'image': image, 'label': label}
 
@@ -915,7 +906,7 @@ class Padding(object):
         size_old = image.GetSize()
 
         if (size_old[0] >= self.output_size[0]) and (size_old[1] >= self.output_size[1]) and (
-                size_old[2] >= self.output_size[2]):
+            size_old[2] >= self.output_size[2]):
             return sample
         else:
             output_size = self.output_size
@@ -959,7 +950,6 @@ class Adapt_eq_histogram(object):
         self.name = 'Adapt_eq_histogram'
 
     def __call__(self, sample):
-
         adapt = sitk.AdaptiveHistogramEqualizationImageFilter()
         adapt.SetAlpha(0.7)
         adapt.SetBeta(0.8)
@@ -1019,7 +1009,7 @@ class CropBackground(object):
         x_centroid = np.int(centroid[0])
         y_centroid = np.int(centroid[1])
 
-        roiFilter.SetIndex([int(x_centroid-(size_new[0])/2), int(y_centroid-(size_new[1])/2), 0])
+        roiFilter.SetIndex([int(x_centroid - (size_new[0]) / 2), int(y_centroid - (size_new[1]) / 2), 0])
 
         label_crop = roiFilter.Execute(label)
         image_crop = roiFilter.Execute(image)
@@ -1172,7 +1162,7 @@ class Augmentation(object):
             image, label = sample['image'], sample['label']
             image = self.noiseFilter.Execute(image)
             if Segmentation is False:
-                label = self.noiseFilter.Execute(label)    # comment for segmentation
+                label = self.noiseFilter.Execute(label)  # comment for segmentation
 
             return {'image': image, 'label': label}
 
@@ -1184,8 +1174,8 @@ class Augmentation(object):
             theta_z = np.random.randint(-180, 180)
             image, label = sample['image'], sample['label']
 
-            image = rotation3d_image(image,theta_x,theta_y, theta_z)
-            label = rotation3d_label(label,theta_x,theta_y, theta_z)
+            image = rotation3d_image(image, theta_x, theta_y, theta_z)
+            label = rotation3d_label(label, theta_x, theta_y, theta_z)
 
             return {'image': image, 'label': label}
 
@@ -1249,7 +1239,7 @@ class Augmentation(object):
 
             image = contrast(image)
             if Segmentation is False:
-                label = contrast(label)             # comment for segmentation
+                label = contrast(label)  # comment for segmentation
 
             return {'image': image, 'label': label}
 

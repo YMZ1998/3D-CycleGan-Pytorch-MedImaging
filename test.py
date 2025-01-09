@@ -163,6 +163,10 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
         pred = pred['fake_B']
         pred = pred.squeeze().data.cpu().numpy()
 
+        # print("pred shape: {}".format(pred.shape))
+        # from vis_image_3d import plot3d
+        # plot3d(pred)
+
         pred = (pred * 127.5) + 127.5
 
         istart = ijk_patch_indices[i][0][0]

@@ -20,7 +20,7 @@ def lstFiles(Path, mode='cbct'):
     images_list = []  # create an empty list, the raw image data files is stored here
     for dirName, subdirList, fileList in os.walk(Path):
         for filename in fileList:
-            if mode not in filename:
+            if mode + '.nii.gz' != filename:
                 continue
             if ".nii.gz" in filename.lower():
                 images_list.append(os.path.join(dirName, filename))
@@ -142,7 +142,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--images', default=r'./data/brain/train', help='path to the images a (early frames)')
 parser.add_argument('--labels', default=r'./data/brain/train', help='path to the images b (late frames)')
 parser.add_argument('--split', default=50, help='number of images for testing')
-parser.add_argument('--resolution', default=(1.6, 1.6, 1.6), help='new resolution to resample the all data')
+parser.add_argument('--resolution', default=(1., 1., 1.), help='new resolution to resample the all data')
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -150,16 +150,19 @@ if __name__ == "__main__":
     list_images = lstFiles(args.images, 'cbct')
     list_labels = lstFiles(args.labels, 'ct')
     print(list_images)
+    print(list_labels)
 
     reference_image = list_labels[0]  # setting a reference image to have all data in the same coordinate system
     reference_image = sitk.ReadImage(reference_image)
     reference_image = resample_sitk_image(reference_image, spacing=args.resolution, interpolator='linear')
+    if os.path.isdir('./Data_folder'):
+        shutil.rmtree('./Data_folder')
 
     if not os.path.isdir('./Data_folder/train'):
-        os.mkdir('./Data_folder/train')
+        os.makedirs('./Data_folder/train')
 
     if not os.path.isdir('./Data_folder/test'):
-        os.mkdir('./Data_folder/test')
+        os.makedirs('./Data_folder/test')
 
     for i in range(len(list_images) - int(args.split)):
 
@@ -175,13 +178,13 @@ if __name__ == "__main__":
         a = list_images[int(args.split) + i]
         b = list_labels[int(args.split) + i]
 
-        print(a)
+        print(a, b)
 
         label = sitk.ReadImage(b)
         image = sitk.ReadImage(a)
 
-        label, reference_image = Registration(label, reference_image)
-        image, label = Registration(image, label)
+        # label, reference_image = Registration(label, reference_image)
+        # image, label = Registration(image, label)
 
         image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear')
         label = resample_sitk_image(label, spacing=args.resolution, interpolator='linear')
@@ -214,8 +217,8 @@ if __name__ == "__main__":
         label = sitk.ReadImage(b)
         image = sitk.ReadImage(a)
 
-        label, reference_image = Registration(label, reference_image)
-        image, label = Registration(image, label)
+        # label, reference_image = Registration(label, reference_image)
+        # image, label = Registration(image, label)
 
         image = resample_sitk_image(image, spacing=args.resolution, interpolator='linear')
         label = resample_sitk_image(label, spacing=args.resolution, interpolator='linear')
