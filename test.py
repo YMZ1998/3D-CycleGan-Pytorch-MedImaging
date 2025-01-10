@@ -9,6 +9,7 @@ import math
 from torch.autograd import Variable
 from tqdm import tqdm
 import datetime
+from vis_image_3d import plot3d
 
 def from_numpy_to_itk(image_np, image_itk):
     image_np = np.transpose(image_np, (2, 1, 0))
@@ -48,16 +49,19 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
     ]
 
     # read image file
-    reader = sitk.ImageFileReader()
-    reader.SetFileName(image_path)
-    image = reader.Execute()
+    # reader = sitk.ImageFileReader()
+    # reader.SetFileName(image_path)
+    # image = reader.Execute()
+    image=sitk.ReadImage(image_path)
 
     # normalize the image
     image = Normalization(image)
 
-    castImageFilter = sitk.CastImageFilter()
-    castImageFilter.SetOutputPixelType(sitk.sitkFloat32)
-    image = castImageFilter.Execute(image)
+    # castImageFilter = sitk.CastImageFilter()
+    # castImageFilter.SetOutputPixelType(sitk.sitkFloat32)
+    # image = castImageFilter.Execute(image)
+    image = sitk.Cast(image, sitk.sitkFloat32)
+    # plot3d(sitk.GetArrayFromImage(image).transpose(2, 1, 0))
 
     # create empty label in pair with transformed image
     label_tfm = sitk.Image(image.GetSize(), sitk.sitkFloat32)
@@ -106,7 +110,7 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
 
     # a weighting matrix will be used for averaging the overlapped region
     weight_np = np.zeros(label_np.shape)
-
+    # plot3d(image_np.squeeze())
     # prepare image batch indices
     inum = int(math.ceil((image_np.shape[0] - patch_size_x) / float(stride_inplane))) + 1
     jnum = int(math.ceil((image_np.shape[1] - patch_size_y) / float(stride_inplane))) + 1
@@ -148,6 +152,7 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
 
     for i in tqdm(range(len(batches))):
         batch = batches[i]
+        # plot3d(batch.squeeze())
 
         batch = (batch - 127.5) / 127.5
 
@@ -164,7 +169,6 @@ def inference(model, image_path, result_path, resample, resolution, patch_size_x
         pred = pred.squeeze().data.cpu().numpy()
 
         # print("pred shape: {}".format(pred.shape))
-        # from vis_image_3d import plot3d
         # plot3d(pred)
 
         pred = (pred * 127.5) + 127.5
